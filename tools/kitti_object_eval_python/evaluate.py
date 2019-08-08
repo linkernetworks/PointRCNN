@@ -8,7 +8,7 @@ from tools.kitti_object_eval_python.eval import get_official_eval_result, get_co
 def _read_imageset_file(path):
     with open(path, 'r') as f:
         lines = f.readlines()
-    return [int(line) for line in lines]
+    return [line.replace('\n', '') for line in lines]
 
 
 def evaluate(label_path,

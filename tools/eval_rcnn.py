@@ -79,7 +79,7 @@ def save_kitti_format(sample_id, calib, bbox3d, kitti_output_dir, scores, img_sh
     img_boxes_h = img_boxes[:, 3] - img_boxes[:, 1]
     box_valid_mask = np.logical_and(img_boxes_w < img_shape[1] * 0.8, img_boxes_h < img_shape[0] * 0.8)
 
-    kitti_output_file = os.path.join(kitti_output_dir, '%06d.txt' % sample_id)
+    kitti_output_file = os.path.join(kitti_output_dir, sample_id+'.txt')
     with open(kitti_output_file, 'w') as f:
         for k in range(bbox3d.shape[0]):
             if box_valid_mask[k] == 0:
@@ -598,7 +598,7 @@ def eval_one_epoch_joint(model, dataloader, epoch_id, result_dir, logger):
                 save_kitti_format(cur_sample_id, calib, pred_boxes3d_np[k], refine_output_dir,
                                   raw_scores_np[k], image_shape)
 
-                output_file = os.path.join(rpn_output_dir, '%06d.npy' % cur_sample_id)
+                output_file = os.path.join(rpn_output_dir, cur_sample_id+'.npy')
                 np.save(output_file, output_data.astype(np.float32))
 
         # scores thresh
@@ -608,7 +608,7 @@ def eval_one_epoch_joint(model, dataloader, epoch_id, result_dir, logger):
             cur_inds = inds[k].view(-1)
             if cur_inds.sum() == 0:
                 continue
-
+    
             pred_boxes3d_selected = pred_boxes3d[k, cur_inds]
             raw_scores_selected = raw_scores[k, cur_inds]
             norm_scores_selected = norm_scores[k, cur_inds]
@@ -671,14 +671,14 @@ def eval_one_epoch_joint(model, dataloader, epoch_id, result_dir, logger):
                                                                       total_gt_bbox, cur_recall))
         ret_dict['rcnn_recall(thresh=%.2f)' % thresh] = cur_recall
 
-    if cfg.TEST.SPLIT != 'test':
+    if  cfg.TEST.SPLIT != 'test':
         logger.info('Averate Precision:')
-        name_to_class = {'Car': 0, 'Pedestrian': 1, 'Cyclist': 2}
+        name_to_class = {'car': 0, 'Pedestrian': 1, 'Cyclist': 2,'traffic_cone':3,'bus':4}
         ap_result_str, ap_dict = kitti_evaluate(dataset.label_dir, final_output_dir, label_split_file=split_file,
                                                 current_class=name_to_class[cfg.CLASSES])
         logger.info(ap_result_str)
         ret_dict.update(ap_dict)
-
+        
     logger.info('result is saved to: %s' % result_dir)
     return ret_dict
 
@@ -812,7 +812,7 @@ def repeat_eval_ckpt(root_result_dir, ckpt_dir):
         pass
 
     # tensorboard log
-    tb_log = SummaryWriter(log_dir=os.path.join(root_result_dir, 'tensorboard_%s' % cfg.TEST.SPLIT))
+    tb_log = SummaryWriter(logdir=os.path.join(root_result_dir, 'tensorboard_%s' % cfg.TEST.SPLIT))
 
     while True:
         # check whether there is checkpoint which is not evaluated
