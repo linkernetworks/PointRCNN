@@ -34,7 +34,7 @@ All the codes are tested in the following environment:
 
 a. Clone the PointRCNN repository.
 ```shell
-git clone --recursive https://github.com/sshaoshuai/PointRCNN.git
+git clone --recursive https://github.com/linkernetworks/PointRCNN.git
 ```
 If you forget to add the `--recursive` parameter, just run the following command to clone the `Pointnet2.PyTorch` submodule.
 ```shell
