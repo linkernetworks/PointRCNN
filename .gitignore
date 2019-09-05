@@ -10,3 +10,9 @@
 **/*.egg-info
 **/dist
 tools/gt_database/
+*.jpg
+*.out
+*.txt
+*.log
+*.pth
+*.json
