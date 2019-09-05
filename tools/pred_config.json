@@ -1,0 +1,18 @@
+{
+    "data_reader": {
+        "batch_size": 2,
+        "img_path_root": "/Users/baturalp/Downloads/select_200"
+    },
+    "car_model": {
+        "model_path": "ckpt/car_r0.ckpt",
+        "config_path": "config/default.yaml"
+    },
+    "pedestrian_model": {
+        "model_path": "ckpt/pedestrian_r0.ckpt",
+        "config_path": "config/default_pedestrian.yaml"
+    },
+    "cyclist_model": {
+        "model_path": "ckpt/cyclist_r0.ckpt",
+        "config_path": "config/default_cyclist.yaml"
+    }
+}
