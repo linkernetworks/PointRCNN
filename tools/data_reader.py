@@ -4,6 +4,27 @@ import numpy as np
 import os
 
 
+class Calib:
+    def __init__(self):
+        self.V2C = np.array(
+            [[1.5102950e-02, -9.9988567e-01, -7.4092000e-04, -1.3228650e-02],
+             [1.3125970e-02, 9.3921000e-04, -9.9991341e-01, -9.3837510e-02],
+             [9.9979978e-01, 1.5091910e-02, 1.3138660e-02, -1.2575978e-01]])
+
+        # inverse_rigid_trans(V2C)
+        self.C2V = np.array([[
+            1.51029500e-02, 1.31259700e-02, 9.99799780e-01, 1.27166100e-01
+        ], [-9.99885670e-01, 9.39210000e-04, 1.50919100e-02, -1.12410492e-02],
+                             [
+                                 -7.40920000e-04, -9.99913410e-01,
+                                 1.31386600e-02, -9.21868710e-02
+                             ]])
+
+        self.C2I = np.array([[568.3266852, 0., 808.88567155, 0],
+                             [0., 568.3266852, 213.44942506, 0],
+                             [0., 0., 1., 0]])
+
+
 class DataReader:
     def __init__(self, config):
         def read_img_path(meta_path):
@@ -20,6 +41,28 @@ class DataReader:
         self.pcd_paths = []
         self.pcd_paths = read_img_path(config['input_dir'])
         self.config = config
+        self.calib = Calib()
+
+    def next_batch(self, scope):
+        def read_pcd(path_list, scope):
+            path_list = [
+                os.path.join(self.config['input_dir'], path)
+                for path in paths['urlPcds'] for paths in path_list
+            ]
+            pcd_data_batch = []
+            for path in path_list:
+                pcd_data = load_data_pcd(path['pcd'], scope, self.calib)
+                pcd_data_batch.append(preprocess(pcd_data, self.calib, scope))
+            return pcd_data_batch
+
+        is_end = False
+        cur_paths = self.pcd_paths[:self.config['batch_size']]
+        pcds = read_pcd(cur_paths, scope)
+        self.img_paths = self.pcd_paths[self.config['batch_size']:]
+        if len(self.img_paths) == 0:
+            is_end = True
+
+        return pcds, self.calib, is_end, cur_paths
 
 
 def velo_to_cam(pts_3d_velo, calib):
@@ -89,20 +132,3 @@ def preprocess(pcd_mat, calib, scope):
     # print(f'num of points: {M.shape}')
     M = M[np.newaxis, :]
     return M
-
-
-def next_batch(self):
-    def read_pcd(path_list, scope, calib):
-        path_list = [
-            os.path.join(self.config['input_dir'], path) for path in path_list
-        ]
-        pcd_data = load_data_pcd(path_list, scope, calib)
-        return pcd_data
-
-    is_end = False
-    cur_paths = self.img_paths[:self.config['batch_size']]
-    imgs = list(map(read_pcd, cur_paths))
-    self.img_paths = self.img_paths[self.config['batch_size']:]
-    if len(self.img_paths) == 0:
-        is_end = True
-    return imgs, is_end, cur_paths

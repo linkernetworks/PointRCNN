@@ -40,18 +40,6 @@ def create_logger(log_file):
     return logging.getLogger(__name__)
 
 
-def load_ckpt(ckpt, model, logger):
-    train_utils.load_checkpoint(model, filename=ckpt, logger=logger)
-
-
-def load_model(ckpt):
-    logger = create_logger('test.log')
-    model = PointRCNN(num_classes=2, use_xyz=True, mode='TEST')
-    model.cuda()
-    load_ckpt(ckpt, model, logger)
-    return model
-
-
 def pred(model, data, cfg, args):
     input_data = {'pts_input': data}
     ret_dict = model(input_data)

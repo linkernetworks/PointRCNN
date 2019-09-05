@@ -9,9 +9,38 @@ from glob import glob
 import json
 import cv2
 import numpy as np
+from lib.net.point_rcnn import PointRCNN
+from tools.train_utils import train_utils
+from tools.data_reader import DataReader
+
 CUBE_EDGES_BY_VERTEX = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7],
                         [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
 OUT_IMG_SAVE_PATH = 'result_img'
+CLASS_LIST = {'car', 'pedestrian', 'vehicle'}
+
+
+def load_ckpt(ckpt, model, logger):
+    train_utils.load_checkpoint(model, filename=ckpt, logger=logger)
+
+
+def create_logger(log_file):
+    log_format = '%(asctime)s  %(levelname)5s  %(message)s'
+    logging.basicConfig(level=logging.INFO,
+                        format=log_format,
+                        filename=log_file)
+    console = logging.StreamHandler()
+    console.setLevel(logging.ERROR)
+    console.setFormatter(logging.Formatter(log_format))
+    logging.getLogger(__name__).addHandler(console)
+    return logging.getLogger(__name__)
+
+
+def load_model(ckpt):
+    logger = create_logger('test.log')
+    model = PointRCNN(num_classes=2, use_xyz=True, mode='TEST')
+    model.cuda()
+    load_ckpt(ckpt, model, logger)
+    return model
 
 
 def cam_corners3d_to_velo_boxes(corners3d, calib):
@@ -80,21 +109,33 @@ def run(args):
 
     with open('config.json', 'r') as f:
         config = json.loads(f.read())
+    if args.img_path_root is not None:
+        config['data_reader']['img_path_root'] = args.img_path_root
+    data_reader = DataReader(config['data_reader'])
     config['data_reader']['input_dir'] = args.input_dir
-
-    data = load_data(path_list, scope=cfg.PC_AREA_SCOPE)
-    data = torch.from_numpy(data).contiguous().cuda(non_blocking=True).float()
-    cam_corners3d = predictor.pred(model, data, cfg, args)
-    boxes, boxes_corner = cam_corners3d_to_img_boxes(cam_corners3d, calib)
-    img_plot_option = args.img_plot.split(',')
-    assert '3d' in img_plot_option or '2d' in img_plot_option
-    b3 = boxes_corner if '3d' in img_plot_option else None
-    b2 = boxes if '2d' in img_plot_option else None
-    if args.img_plot == '3d,2d' or args.img_plot == '2d,3d':
-        suffix = '2d3d'
-    else:
-        suffix = args.img_plot
-    save_img(data_file.replace('txt', 'bmp'), suffix, corners=b3, boxes=b2)
+    model = load_model(args.ckpt)
+    model.eval()
+    for pred_class in CLASS_LIST:
+        while True:
+            data, calib, is_end, cur_paths = data_reader.next_batch()
+            data = torch.from_numpy(data).contiguous().cuda(
+                non_blocking=True).float()
+            cam_corners3d = predictor.pred(model, data, cfg, args)
+            boxes, boxes_corner = cam_corners3d_to_img_boxes(
+                cam_corners3d, calib)
+            img_plot_option = args.img_plot.split(',')
+            assert '3d' in img_plot_option or '2d' in img_plot_option
+            b3 = boxes_corner if '3d' in img_plot_option else None
+            b2 = boxes if '2d' in img_plot_option else None
+            if args.img_plot == '3d,2d' or args.img_plot == '2d,3d':
+                suffix = '2d3d'
+            else:
+                suffix = args.img_plot
+            # save_img(data_file.replace('txt', 'bmp'), suffix, corners=b3, boxes=b2)
+            if is_end:
+                print('Inference Done')
+                torch.cuda.empty_cache()
+                break
 
 
 def parse_args():
@@ -110,7 +151,7 @@ def parse_args():
                         type=str,
                         required=True,
                         help='output directory where stores json')
-    parser.add_argument('-ipr', '--img_path_root', type=str, required=False)
+    parser.add_argument('-dpr', '--data_path_root', type=str, required=False)
     parser.add_argument('-si',
                         '--save_img',
                         action='store_true',
