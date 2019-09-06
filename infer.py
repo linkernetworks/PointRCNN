@@ -1,5 +1,4 @@
 import predictor
-import pypcd.pypcd
 import argparse
 import logging
 import os
@@ -11,12 +10,15 @@ import cv2
 import numpy as np
 from lib.net.point_rcnn import PointRCNN
 from tools.train_utils import train_utils
-from tools.data_reader import DataReader
+from data_reader import DataReader, cam_to_velo
+from lib.config import cfg, cfg_from_file
+import torch
+from json_out import dump_json
 
 CUBE_EDGES_BY_VERTEX = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7],
                         [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
 OUT_IMG_SAVE_PATH = 'result_img'
-CLASS_LIST = {'car', 'pedestrian', 'vehicle'}
+CLASS_LIST = {'car'}
 
 
 def load_ckpt(ckpt, model, logger):
@@ -43,12 +45,18 @@ def load_model(ckpt):
     return model
 
 
+def velo_box_2_linker_box(boxes,calib):
+    boxes = boxes.copy()
+    boxes[:, :3] = cam_to_velo(boxes[:, :3],calib)
+    boxes[:, 1] = -boxes[:, 1]
+    boxes = boxes[:, (0, 1, 2, 4, 3, 5, 6)]
+    return boxes
+    
 def cam_corners3d_to_velo_boxes(corners3d, calib):
     num = len(corners3d)
     corners3d_hom = np.concatenate((corners3d, np.ones((num, 8, 1))),
                                    axis=2)  # (N, 8, 4)
     return np.matmul(corners3d_hom, calib.c2v.T)  # (N, 8, 3)
-
 
 def cam_corners3d_to_img_boxes(corners3d, calib):
     """
@@ -79,7 +87,6 @@ def save_img(f, suffix, corners=None, boxes=None, fmt='jpg', root='./tmp'):
     img = cv2.imread(f)
     name = osp.splitext(osp.basename(f))[0]
     name = f'{name}_{suffix}.{fmt}'
-    print(corners)
     if corners is not None:
         for corner in corners:
             for edge in CUBE_EDGES_BY_VERTEX:
@@ -96,62 +103,64 @@ def save_img(f, suffix, corners=None, boxes=None, fmt='jpg', root='./tmp'):
 
 
 def run(args):
-
-    if not os.path.exists(args.input_dir):
-        print('%s not exists returning' % args.input_dir)
+    if not os.path.exists(args.input_json):
+        print('%s not exists returning' % args.input_json)
         return
-    if not os.path.exists(args.output_dir):
-        print('%s not exists, making' % args.output_dir)
-        os.makedirs(args.output_dir)
+
+    # if not os.path.exists(args.output_dir):
+    #     print('%s not exists, making' % args.output_json)
+    #     os.makedirs(args.output_json)
 
     if args.save_img and not os.path.exists(OUT_IMG_SAVE_PATH):
         os.makedirs(OUT_IMG_SAVE_PATH)
 
-    with open('config.json', 'r') as f:
+    with open('pred_config.json', 'r') as f:
         config = json.loads(f.read())
-    if args.img_path_root is not None:
-        config['data_reader']['img_path_root'] = args.img_path_root
+
+    if args.data_root is not None:
+        config['data_reader']['data_root'] = args.data_root
+
+    config['data_reader']['input_dir'] = args.input_json
     data_reader = DataReader(config['data_reader'])
-    config['data_reader']['input_dir'] = args.input_dir
-    model = load_model(args.ckpt)
-    model.eval()
+    out_list = {}
     for pred_class in CLASS_LIST:
+        model_config = config[pred_class+'_model']
+        cfg_from_file(model_config['config_path'])
+        model = load_model(model_config['model_path'])
+        model.eval()
+        data_reader.scope = cfg.PC_AREA_SCOPE
+        result_out_list = []
         while True:
             data, calib, is_end, cur_paths = data_reader.next_batch()
             data = torch.from_numpy(data).contiguous().cuda(
                 non_blocking=True).float()
-            cam_corners3d = predictor.pred(model, data, cfg, args)
-            boxes, boxes_corner = cam_corners3d_to_img_boxes(
-                cam_corners3d, calib)
-            img_plot_option = args.img_plot.split(',')
-            assert '3d' in img_plot_option or '2d' in img_plot_option
-            b3 = boxes_corner if '3d' in img_plot_option else None
-            b2 = boxes if '2d' in img_plot_option else None
-            if args.img_plot == '3d,2d' or args.img_plot == '2d,3d':
-                suffix = '2d3d'
-            else:
-                suffix = args.img_plot
-            # save_img(data_file.replace('txt', 'bmp'), suffix, corners=b3, boxes=b2)
+            pred_boxes_list = predictor.pred(model, data, cfg)
+            # boxes, boxes_corner = cam_corners3d_to_img_boxes(
+            #     cam_corners3d, calib)
+            velo_boxes_list = [velo_box_2_linker_box(pred_boxes, data_reader.calib) for pred_boxes in pred_boxes_list]
+            result_out_list.extend(velo_boxes_list)
             if is_end:
                 print('Inference Done')
                 torch.cuda.empty_cache()
                 break
-
+        out_list[pred_class] = result_out_list
+    dump_json(config=config, out_result=out_list)
+    
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Lidar cuboid detection')
     parser.add_argument(
         '-i',
-        '--input_dir',
+        '--input-json',
         type=str,
         required=True,
         help='read file in dir/read specific json by adding .json')
     parser.add_argument('-o',
-                        '--output_dir',
+                        '--output-json',
                         type=str,
-                        required=True,
+                        
                         help='output directory where stores json')
-    parser.add_argument('-dpr', '--data_path_root', type=str, required=False)
+    parser.add_argument('-dpr', '--data-root', type=str, required=False)
     parser.add_argument('-si',
                         '--save_img',
                         action='store_true',

@@ -1,0 +1,22 @@
+{
+    "data_reader": {
+        "batch_size": 1,
+        "data_root": "/Users/baturalp/Downloads/select_200"
+    },
+    "car_model": {
+        "model_path": "PointRCNN.pth",
+        "config_path": "tools/cfgs/default.yaml"
+    },
+    "pedestrian_model": {
+        "model_path": "pedestrian_r0.pth",
+        "config_path": "tools/cfgs/default_pedestrian.yaml"
+    },
+    "cyclist_model": {
+        "model_path": "cyclist_r0.pth",
+        "config_path": "config/default_cyclist.yaml"
+    },
+    "output":{
+        "directory" : "infer_out",
+        "file_name": "out.json"
+    }
+}
