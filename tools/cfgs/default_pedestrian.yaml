@@ -1,4 +1,4 @@
-CLASSES: Car
+CLASSES: Pedestrian
 
 INCLUDE_SIMILAR_TYPE: True
 
@@ -15,8 +15,8 @@ GT_AUG_APPLY_PROB: 1.0
 GT_AUG_HARD_RATIO: 0.6
 
 PC_REDUCE_BY_RANGE: True
-PC_AREA_SCOPE: [[-40, 40], [-1,   3], [0, 70.4]]  # x, y, z scope in rect camera coords
-CLS_MEAN_SIZE: [[1.52563191462, 1.62856739989, 3.88311640418]]
+PC_AREA_SCOPE: [[-50, 50], [-0.5, 2.5], [0, 50]]  # x, y, z scope in rect camera coords
+CLS_MEAN_SIZE: [[1.73, 0.8, 0.6]]
 
 
 # 1. config of rpn network
@@ -28,7 +28,7 @@ RPN:
     USE_INTENSITY: False
 
     # config of bin-based loss
-    LOC_XZ_FINE: False
+    LOC_XZ_FINE: True
     LOC_SCOPE: 3.0
     LOC_BIN_SIZE: 0.5
     NUM_HEAD_BIN: 12
@@ -113,8 +113,8 @@ RCNN:
     FOCAL_ALPHA: [0.25, 0.75]
     FOCAL_GAMMA: 2.0
     CLS_WEIGHT: [1.0, 1.0, 1.0]
-    CLS_FG_THRESH: 0.6
-    CLS_BG_THRESH: 0.45
+    CLS_FG_THRESH: 0.5
+    CLS_BG_THRESH: 0.35
     CLS_BG_THRESH_LO: 0.05
     REG_FG_THRESH: 0.55
     FG_RATIO: 0.5

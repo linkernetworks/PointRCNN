@@ -18,7 +18,7 @@ from json_out import dump_json
 CUBE_EDGES_BY_VERTEX = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7],
                         [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
 OUT_IMG_SAVE_PATH = 'result_img'
-CLASS_LIST = {'car'}
+CLASS_LIST = {'car','pedestrian','cyclist'}
 
 
 def load_ckpt(ckpt, model, logger):
@@ -121,9 +121,9 @@ def run(args):
         config['data_reader']['data_root'] = args.data_root
 
     config['data_reader']['input_dir'] = args.input_json
-    data_reader = DataReader(config['data_reader'])
     out_list = {}
     for pred_class in CLASS_LIST:
+        data_reader = DataReader(config['data_reader'])
         model_config = config[pred_class+'_model']
         cfg_from_file(model_config['config_path'])
         model = load_model(model_config['model_path'])
@@ -142,6 +142,7 @@ def run(args):
             if is_end:
                 print('Inference Done')
                 torch.cuda.empty_cache()
+                del model
                 break
         out_list[pred_class] = result_out_list
     dump_json(config=config, out_result=out_list)

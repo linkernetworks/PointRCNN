@@ -16,14 +16,13 @@ def dump_json(config,out_result):
                             "y": float(box[1]),
                             "z": float(box[2]),
                             "l": float(box[5]),
-                            "w": float(box[4]),
-                            "h": float(box[3]),
+                            "w": float(box[3]),
+                            "h": float(box[4]),
                             "yaw": float(box[6])
                         }
                     label_list.append(label_object)
             sample['labels'] = label_list
         
-    import ipdb; ipdb.set_trace()
     if not os.path.exists(config['output']['directory']):
         os.makedirs(config['output']['directory'])
     with open(os.path.join(config['output']['directory'], '%s' % config['output']['file_name']),
