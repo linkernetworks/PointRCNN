@@ -2,3 +2,6 @@
 	path = pointnet2_lib
 	url = https://github.com/sshaoshuai/Pointnet2.PyTorch.git
     ignore=dirty
+[submodule "tools/pypcd"]
+	path = tools/pypcd
+	url = https://github.com/klintan/pypcd.git
