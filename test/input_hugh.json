@@ -1,0 +1,60 @@
+[
+  {
+    "sequence": "07-25/2019-07-25-14-47-00",
+    "seqNo": 4,
+    "name": "1563172839114326784.png",
+    "labels": [],
+    "labelsUpstream": [],
+    "url": null,
+    "storage": "lge3d",
+    "dataset": "lge-object3d-sample",
+    "lidarPlaneURLs": [
+      "cam_1/1563172839114326784.png",
+      "cam_2/1563172839095968790.png",
+      "cam_3/1563172839123877025.png",
+      "cam_4/1563172839159818806.png",
+      "cam_5/1563172839176511533.png",
+      "cam_6/1563172839143373085.png"
+    ],
+    "lidarCloudURLs": [
+      "lidar_1/1563172839114326784.pcd",
+      "lidar_2/1563172839095968790.pcd",
+      "lidar_3/1563172839123877025.pcd",
+      "lidar_4/1563172839159818806.pcd",
+      "lidar_5/1563172839176511533.pcd",
+      "lidar_6/1563172839143373085.pcd"
+    ],
+    "lidarCalibURLs": [
+      "calib/calib.txt"
+    ]
+  },
+  {
+    "sequence": "07-25/2019-07-25-14-47-00",
+    "seqNo": 5,
+    "name": "1563172839909559990.png",
+    "labels": [],
+    "labelsUpstream": [],
+    "url": null,
+    "storage": "lge3d",
+    "dataset": "lge-object3d-sample",
+    "lidarPlaneURLs": [
+      "cam_1/1563172839909559990.png",
+      "cam_2/1563172839895926303.png",
+      "cam_3/1563172839923526310.png",
+      "cam_4/1563172839959178723.png",
+      "cam_5/1563172839975607903.png",
+      "cam_6/1563172839943404803.png"
+    ],
+    "lidarCloudURLs": [
+      "lidar_1/1563172839909559990.pcd",
+      "lidar_2/1563172839895926303.pcd",
+      "lidar_3/1563172839923526310.pcd",
+      "lidar_4/1563172839959178723.pcd",
+      "lidar_5/1563172839975607903.pcd",
+      "lidar_6/1563172839943404803.pcd"
+    ],
+    "lidarCalibURLs": [
+      "calib/calib.txt"
+    ]
+  }
+]

@@ -3,20 +3,28 @@
         "batch_size": 1,
         "data_root": "/Users/baturalp/Downloads/select_200"
     },
-    "car_model": {
-        "model_path": "PointRCNN.pth",
+    "vehicleSmall_model": {
+        "model_path": "ckpt/car_r0.pth",
         "config_path": "tools/cfgs/default.yaml"
     },
     "pedestrian_model": {
-        "model_path": "pedestrian_r0.pth",
+        "model_path": "ckpt/pedestrian_r0.pth",
         "config_path": "tools/cfgs/default_pedestrian.yaml"
     },
     "cyclist_model": {
-        "model_path": "cyclist_r0.pth",
-        "config_path": "config/default_cyclist.yaml"
+        "model_path": "ckpt/cyclist_r0.pth",
+        "config_path": "tools/cfgs/default_cyclist.yaml"
     },
-    "output":{
-        "directory" : "infer_out",
+    "pole_model": {
+        "model_path": "ckpt/pole_r0_v1.pth",
+        "config_path": "tools/cfgs/pole.yaml"
+    },
+    "vehicleBig_model": {
+        "model_path": "ckpt/truck_62.pth",
+        "config_path": "tools/cfgs/default_truck.yaml"
+    },
+    "output": {
+        "directory": "infer_out",
         "file_name": "out.json"
     }
 }
