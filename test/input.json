@@ -1,0 +1,31 @@
+[
+  {
+    "sequence": "07-25/2019-07-25-14-47-00",
+    "seqNo": 26,
+    "name": "1563172856815252689.png",
+    "labels": [],
+    "labelsUpstream": [],
+    "url": null,
+    "storage": "lge3d",
+    "dataset": "lge-object3d-sample",
+    "lidarPlaneURLs": [
+      "cam_1/1563172835910293193.png",
+      "cam_2/1563172835897422455.png",
+      "cam_3/1563172835925373472.png",
+      "cam_4/1563172835959328049.png",
+      "cam_5/1563172835977574697.png",
+      "cam_6/1563172835943802872.png"
+    ],
+    "lidarCloudURLs": [
+      "lidar_1/1563172835910293193.pcd",
+      "lidar_2/1563172835897422455.pcd",
+      "lidar_3/1563172835925373472.pcd",
+      "lidar_4/1563172835959328049.pcd",
+      "lidar_5/1563172835977574697.pcd",
+      "lidar_6/1563172835943802872.pcd"
+    ],
+    "lidarCalibURLs": [
+      "calib/calib.txt"
+    ]
+  }
+]
