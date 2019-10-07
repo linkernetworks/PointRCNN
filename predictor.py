@@ -19,6 +19,7 @@ from lib.utils.bbox_transform import decode_bbox_target
 
 SCORE_THRESH = -2.0
 
+
 def inverse_rigid_trans(Tr):
     """Inverse a rigid body transform matrix (3x4 as [R|t])
        [R'|-R't; 0|1]
@@ -85,11 +86,11 @@ def pred(model, data, cfg):
         raw_scores = rcnn_cls[:, pred_classes]
         norm_scores = cls_norm_scores[:, pred_classes]
     inds = norm_scores > cfg.RCNN.SCORE_THRESH
-    result_list=[]
+    result_list = []
     for k in range(batch_size):
         cur_inds = inds[k].view(-1)
         if cur_inds.sum() == 0:
-            print('No valid detections')
+            # print('No valid detections')
             result_list.append([])
             continue
 
@@ -103,10 +104,9 @@ def pred(model, data, cfg):
                                        cfg.RCNN.NMS_THRESH).view(-1)
         scores_selected = raw_scores_selected[keep_idx]
         idx = np.argwhere(
-            scores_selected.view(-1).cpu().detach().numpy() > SCORE_THRESH
-        ).reshape(-1)
+            scores_selected.view(-1).cpu().numpy() > SCORE_THRESH).reshape(-1)
         pred_boxes3d_selected = pred_boxes3d_selected[keep_idx][idx]
-        pred_boxes3d_selected = pred_boxes3d_selected.cpu().detach().numpy()
-        scores_selected = scores_selected[idx].cpu().detach().numpy()
+        pred_boxes3d_selected = pred_boxes3d_selected.cpu().numpy()
+        scores_selected = scores_selected[idx].cpu().numpy()
         result_list.append(pred_boxes3d_selected)
     return result_list

@@ -1,4 +1,4 @@
-CLASSES: Cyclist
+CLASSES: Truck
 
 INCLUDE_SIMILAR_TYPE: True
 
@@ -15,8 +15,8 @@ GT_AUG_APPLY_PROB: 1.0
 GT_AUG_HARD_RATIO: 0.6
 
 PC_REDUCE_BY_RANGE: True
-PC_AREA_SCOPE: [[-50, 50], [-0.5,  2.5], [-50, 50.4]]  # x, y, z scope in rect camera coords
-CLS_MEAN_SIZE: [[1.73, 0.6, 1.76]] # h w l
+PC_AREA_SCOPE: [[-70, 70], [-1,   3], [-70, 70.4]]  # x, y, z scope in rect camera coords
+CLS_MEAN_SIZE: [[3.44, 2.9, 11.24]]
 
 
 # 1. config of rpn network
@@ -113,8 +113,8 @@ RCNN:
     FOCAL_ALPHA: [0.25, 0.75]
     FOCAL_GAMMA: 2.0
     CLS_WEIGHT: [1.0, 1.0, 1.0]
-    CLS_FG_THRESH: 0.5
-    CLS_BG_THRESH: 0.35
+    CLS_FG_THRESH: 0.7
+    CLS_BG_THRESH: 0.55
     CLS_BG_THRESH_LO: 0.05
     REG_FG_THRESH: 0.55
     FG_RATIO: 0.5
@@ -122,7 +122,7 @@ RCNN:
     HARD_BG_RATIO: 0.8
 
     # config of testing
-    SCORE_THRESH: 0.7
+    SCORE_THRESH: 0.3
     NMS_THRESH: 0.1
 
 # general training config

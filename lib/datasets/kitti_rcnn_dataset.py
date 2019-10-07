@@ -267,7 +267,7 @@ class KittiRCNNDataset(KittiDataset):
         pts_img, pts_rect_depth = calib.rect_to_img(pts_rect)
         pts_valid_flag = self.get_valid_flag(pts_rect, pts_img, pts_rect_depth, img_shape)
 
-        pts_rect = pts_rect[pts_valid_flag][:, 0:3]
+        pts_rect = pts_rect[:, 0:3]
         pts_intensity = pts_intensity[pts_valid_flag]
 
         if cfg.GT_AUG_ENABLED and self.mode == 'TRAIN':

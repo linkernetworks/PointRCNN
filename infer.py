@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from lib.net.point_rcnn import PointRCNN
 from tools.train_utils import train_utils
-from data_reader import DataReader, cam_to_velo
+from data_reader import DataReader, cam_to_velo, velo_to_cam_axis
 from lib.config import cfg, cfg_from_file
 import torch
 from json_out import dump_json
@@ -18,7 +18,9 @@ from json_out import dump_json
 CUBE_EDGES_BY_VERTEX = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7],
                         [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
 OUT_IMG_SAVE_PATH = 'result_img'
-CLASS_LIST = {'car','pedestrian','cyclist'}
+CLASS_LIST = {'vehicleSmall', 'pedestrian', 'cyclist', 'vehicleBig', 'pole'}
+# CLASS_LIST = {'pole'}
+ADULT_HEIGHT = 1.1
 
 
 def load_ckpt(ckpt, model, logger):
@@ -45,18 +47,24 @@ def load_model(ckpt):
     return model
 
 
-def velo_box_2_linker_box(boxes,calib):
+def velo_box_2_linker_box(boxes, calib, isReverse):
+    if not len(boxes):
+        return boxes
     boxes = boxes.copy()
-    boxes[:, :3] = cam_to_velo(boxes[:, :3],calib)
-    boxes[:, 1] = -boxes[:, 1]
-    boxes = boxes[:, (0, 1, 2, 4, 3, 5, 6)]
+    if isReverse:
+        boxes[:, 2] = -boxes[:, 2]
+        boxes[:, 6] = -boxes[:, 6]
+    boxes[:, :3] = velo_to_cam_axis(cam_to_velo(boxes[:, :3], calib), calib)
+    # boxes[:, 3] = boxes[:, 3]
     return boxes
-    
+
+
 def cam_corners3d_to_velo_boxes(corners3d, calib):
     num = len(corners3d)
     corners3d_hom = np.concatenate((corners3d, np.ones((num, 8, 1))),
                                    axis=2)  # (N, 8, 4)
     return np.matmul(corners3d_hom, calib.c2v.T)  # (N, 8, 3)
+
 
 def cam_corners3d_to_img_boxes(corners3d, calib):
     """
@@ -122,31 +130,81 @@ def run(args):
 
     config['data_reader']['input_dir'] = args.input_json
     out_list = {}
-    for pred_class in CLASS_LIST:
-        data_reader = DataReader(config['data_reader'])
-        model_config = config[pred_class+'_model']
-        cfg_from_file(model_config['config_path'])
-        model = load_model(model_config['model_path'])
-        model.eval()
-        data_reader.scope = cfg.PC_AREA_SCOPE
-        result_out_list = []
-        while True:
-            data, calib, is_end, cur_paths = data_reader.next_batch()
-            data = torch.from_numpy(data).contiguous().cuda(
-                non_blocking=True).float()
-            pred_boxes_list = predictor.pred(model, data, cfg)
-            # boxes, boxes_corner = cam_corners3d_to_img_boxes(
-            #     cam_corners3d, calib)
-            velo_boxes_list = [velo_box_2_linker_box(pred_boxes, data_reader.calib) for pred_boxes in pred_boxes_list]
-            result_out_list.extend(velo_boxes_list)
-            if is_end:
-                print('Inference Done')
-                torch.cuda.empty_cache()
-                del model
-                break
-        out_list[pred_class] = result_out_list
-    dump_json(config=config, out_result=out_list)
-    
+    with torch.no_grad():
+        for pred_class in CLASS_LIST:
+            # print(pred_class)
+            data_reader = DataReader(config['data_reader'],
+                                     isRound=pred_class == 'pole')
+            model_config = config[pred_class + '_model']
+            cfg_from_file(model_config['config_path'])
+            model = load_model(model_config['model_path'])
+            model.eval()
+            data_reader.scope = cfg.PC_AREA_SCOPE
+            result_out_list = []
+            while True:
+                data, calib, is_end, cur_paths = data_reader.next_batch()
+                data = torch.from_numpy(data).contiguous().cuda(
+                    non_blocking=True).float()
+                pred_boxes_list = predictor.pred(model, data, cfg)
+                # print('Front:')
+                # print(pred_boxes_list)
+                #data[0][:, 2] = -data[0][:, 2]
+                reverse_pred_box_list = [[]]  #predictor.pred(model, data, cfg)
+                # print('Back:')
+                # print(reverse_pred_box_list)
+                velo_boxes_list = combine_boxes(pred_boxes_list,
+                                                reverse_pred_box_list, calib)
+
+                result_out_list.extend(velo_boxes_list)
+                if is_end:
+                    # print('Inference Done')
+                    torch.cuda.empty_cache()
+                    del model
+                    break
+            out_list[pred_class] = result_out_list
+    print('Inference Done')
+    out_dir = args.output_json.split('/')[0] if len(
+        args.output_json.split('/')) == 2 else None
+    if out_dir != None and not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    postprocess_adult(out_list)
+    dump_json(config=config, out_result=out_list, out_name=args.output_json)
+
+
+def combine_boxes(pred_boxes_list, reverse_pred_box_list, calib):
+    if not len(reverse_pred_box_list[0]) and not len(pred_boxes_list[0]):
+        return [[]]
+    elif not len(reverse_pred_box_list[0]):
+        return [velo_box_2_linker_box(pred_boxes_list[0], calib, False)]
+
+    elif not len(pred_boxes_list[0]):
+        return [velo_box_2_linker_box(reverse_pred_box_list[0], calib, True)]
+    else:
+        return [
+            np.vstack([
+                velo_box_2_linker_box(pred_boxes_list[0], calib, False),
+                velo_box_2_linker_box(reverse_pred_box_list[0], calib, True)
+            ])
+        ]
+
+
+def postprocess_adult(out_list: dict):
+    if 'pedestrian' not in out_list.keys():
+        return
+    out_list['pedestrianAdult'] = []
+    out_list['pedestrianChild'] = []
+    for box_list in out_list['pedestrian']:
+        adult_box = []
+        child_box = []
+        for box in box_list:
+            if box[3] >= ADULT_HEIGHT:
+                adult_box.append(box)
+            else:
+                child_box.append(box)
+        out_list['pedestrianAdult'].append(adult_box)
+        out_list['pedestrianChild'].append(child_box)
+    del out_list['pedestrian']
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Lidar cuboid detection')
@@ -159,7 +217,7 @@ def parse_args():
     parser.add_argument('-o',
                         '--output-json',
                         type=str,
-                        
+                        required=True,
                         help='output directory where stores json')
     parser.add_argument('-dpr', '--data-root', type=str, required=False)
     parser.add_argument('-si',
