@@ -2,6 +2,7 @@ import json
 import pypcd.pypcd.pypcd as pypcd
 import numpy as np
 import os
+PCD_CHOP_NUM = 6
 
 
 class Calib:
@@ -136,7 +137,8 @@ def load_data_pcd(path_list, scope, calib):
         pcd_mat = np.vstack([pcd_data['x'], pcd_data['y'], pcd_data['z']]).T
         # pcd_arr.append(pcd_mat)
         pcd_arr.append(pcd_mat[np.any(pcd_mat != [0, 0, 0], axis=1)])
-    pcd_arr = remove_occlusion(pcd_arr)
+    if len(pcd_arr) == PCD_CHOP_NUM:
+        pcd_arr = remove_occlusion(pcd_arr)
     pcd_mat = np.vstack(pcd_arr)
     return pcd_mat
 
