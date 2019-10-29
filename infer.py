@@ -21,6 +21,7 @@ OUT_IMG_SAVE_PATH = 'result_img'
 CLASS_LIST = {'vehicleSmall', 'pedestrian', 'cyclist', 'vehicleBig', 'pole'}
 # CLASS_LIST = {'pole'}
 ADULT_HEIGHT = 1.1
+HEADLAMP_SHUTTLE_DIFF = 1.0
 
 
 def load_ckpt(ckpt, model, logger):
@@ -140,6 +141,7 @@ def run(args):
             model = load_model(model_config['model_path'])
             model.eval()
             data_reader.scope = cfg.PC_AREA_SCOPE
+            data_reader.scope[1] -= HEADLAMP_SHUTTLE_DIFF
             result_out_list = []
             while True:
                 data, calib, is_end, cur_paths = data_reader.next_batch()
