@@ -146,15 +146,10 @@ def run(args):
                 data = torch.from_numpy(data).contiguous().cuda(
                     non_blocking=True).float()
                 pred_boxes_list = predictor.pred(model, data, cfg)
-                # print('Front:')
-                # print(pred_boxes_list)
-                #data[0][:, 2] = -data[0][:, 2]
-                reverse_pred_box_list = [[]]  #predictor.pred(model, data, cfg)
-                # print('Back:')
-                # print(reverse_pred_box_list)
-                velo_boxes_list = combine_boxes(pred_boxes_list,
-                                                reverse_pred_box_list, calib)
-
+                velo_boxes_list = [
+                    velo_box_2_linker_box(pred_boxes, calib, False)
+                    for pred_boxes in pred_boxes_list
+                ]
                 result_out_list.extend(velo_boxes_list)
                 if is_end:
                     # print('Inference Done')
@@ -169,23 +164,6 @@ def run(args):
         os.makedirs(out_dir)
     postprocess_adult(out_list)
     dump_json(config=config, out_result=out_list, out_name=args.output_json)
-
-
-def combine_boxes(pred_boxes_list, reverse_pred_box_list, calib):
-    if not len(reverse_pred_box_list[0]) and not len(pred_boxes_list[0]):
-        return [[]]
-    elif not len(reverse_pred_box_list[0]):
-        return [velo_box_2_linker_box(pred_boxes_list[0], calib, False)]
-
-    elif not len(pred_boxes_list[0]):
-        return [velo_box_2_linker_box(reverse_pred_box_list[0], calib, True)]
-    else:
-        return [
-            np.vstack([
-                velo_box_2_linker_box(pred_boxes_list[0], calib, False),
-                velo_box_2_linker_box(reverse_pred_box_list[0], calib, True)
-            ])
-        ]
 
 
 def postprocess_adult(out_list: dict):
