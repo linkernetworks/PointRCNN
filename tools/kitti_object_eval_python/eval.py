@@ -25,13 +25,14 @@ def get_thresholds(scores: np.ndarray, num_gt, num_sample_pts=41):
     return thresholds
 
 
-def clean_data(gt_anno, dt_anno, current_class, difficulty):
-    CLASS_NAMES = ['car', 'pedestrian', 'cyclist']
+def clean_data(gt_anno, dt_anno, current_class: str, difficulty):
+    # import ipdb
+    # ipdb.set_trace()
     MIN_HEIGHT = [40, 25, 25]
     MAX_OCCLUSION = [0, 1, 2]
     MAX_TRUNCATION = [0.15, 0.3, 0.5]
     dc_bboxes, ignored_gt, ignored_dt = [], [], []
-    current_cls_name = CLASS_NAMES[current_class].lower()
+    current_cls_name = current_class.lower()
     num_gt = len(gt_anno["name"])
     num_dt = len(dt_anno["name"])
     num_valid_gt = 0
@@ -50,11 +51,11 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty):
         else:
             valid_class = -1
         ignore = False
-        if ((gt_anno["occluded"][i] > MAX_OCCLUSION[difficulty])
-                or (gt_anno["truncated"][i] > MAX_TRUNCATION[difficulty])
-                or (height <= MIN_HEIGHT[difficulty])):
-            # if gt_anno["difficulty"][i] > difficulty or gt_anno["difficulty"][i] == -1:
-            ignore = True
+        # if ((gt_anno["occluded"][i] > MAX_OCCLUSION[difficulty])
+        #         or (gt_anno["truncated"][i] > MAX_TRUNCATION[difficulty])
+        #         or (height <= MIN_HEIGHT[difficulty])):
+        #     # if gt_anno["difficulty"][i] > difficulty or gt_anno["difficulty"][i] == -1:
+        #     ignore = True
         if valid_class == 1 and not ignore:
             ignored_gt.append(0)
             num_valid_gt += 1
@@ -70,10 +71,10 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty):
             valid_class = 1
         else:
             valid_class = -1
-        height = abs(dt_anno["bbox"][i, 3] - dt_anno["bbox"][i, 1])
-        if height < MIN_HEIGHT[difficulty]:
-            ignored_dt.append(1)
-        elif valid_class == 1:
+        # height = abs(dt_anno["bbox"][i, 3] - dt_anno["bbox"][i, 1])
+        # if height < MIN_HEIGHT[difficulty]:
+        #     ignored_dt.append(1)
+        if valid_class == 1:
             ignored_dt.append(0)
         else:
             ignored_dt.append(-1)
@@ -409,7 +410,7 @@ def calculate_iou_partly(gt_annos, dt_annos, metric, num_parts=50):
     return overlaps, parted_overlaps, total_gt_num, total_dt_num
 
 
-def _prepare_data(gt_annos, dt_annos, current_class, difficulty):
+def _prepare_data(gt_annos, dt_annos, current_class: str, difficulty):
     gt_datas_list = []
     dt_datas_list = []
     total_dc_num = []
@@ -442,12 +443,12 @@ def _prepare_data(gt_annos, dt_annos, current_class, difficulty):
 
 def eval_class(gt_annos,
                dt_annos,
-               current_classes,
+               current_classes: list,
                difficultys,
                metric,
                min_overlaps,
                compute_aos=False,
-               num_parts=50):
+               num_parts=36):
     """Kitti eval. support 2d/bev/3d/aos eval. support 0.5:0.05:0.95 coco AP.
     Args:
         gt_annos: dict, must from get_label_annos() in kitti_common.py
@@ -476,6 +477,7 @@ def eval_class(gt_annos,
     recall = np.zeros(
         [num_class, num_difficulty, num_minoverlap, N_SAMPLE_PTS])
     aos = np.zeros([num_class, num_difficulty, num_minoverlap, N_SAMPLE_PTS])
+
     for m, current_class in enumerate(current_classes):
         for l, difficulty in enumerate(difficultys):
             rets = _prepare_data(gt_annos, dt_annos, current_class, difficulty)
@@ -529,6 +531,7 @@ def eval_class(gt_annos,
                         thresholds=thresholds,
                         compute_aos=compute_aos)
                     idx += num_part
+
                 for i in range(len(thresholds)):
                     recall[m, l, k, i] = pr[i, 0] / (pr[i, 0] + pr[i, 2])
                     precision[m, l, k, i] = pr[i, 0] / (pr[i, 0] + pr[i, 1])
@@ -614,9 +617,9 @@ def get_official_eval_result(gt_annos, dt_annos, current_classes):
                             [0.5, 0.25, 0.25, 0.5, 0.25]])
     min_overlaps = np.stack([overlap_0_7, overlap_0_5], axis=0)  # [2, 3, 5]
     class_to_name = {
-        0: 'Car',
+        0: 'car',
         1: 'Pedestrian',
-        2: 'Cyclist',
+        2: 'pole',
         3: 'Van',
         4: 'Person_sitting',
     }
@@ -660,7 +663,6 @@ def get_official_eval_result(gt_annos, dt_annos, current_classes):
                                  f"{mAP3d[j, 1, i]:.4f}, "
                                  f"{mAP3d[j, 2, i]:.4f}"))
 
-
             if compute_aos:
                 result += print_str((f"aos  AP:{mAPaos[j, 0, i]:.2f}, "
                                      f"{mAPaos[j, 1, i]:.2f}, "
@@ -680,31 +682,36 @@ def get_official_eval_result(gt_annos, dt_annos, current_classes):
 
 def get_coco_eval_result(gt_annos, dt_annos, current_classes):
     class_to_name = {
-        0: 'Car',
-        1: 'Pedestrian',
-        2: 'Cyclist',
-        3: 'Van',
-        4: 'Person_sitting',
+        0: 'car',
+        1: 'pedestrian',
+        2: 'cyclist',
+        3: 'truck',
+        4: 'pole',
     }
     class_to_range = {
         0: [0.5, 0.95, 10],
         1: [0.25, 0.7, 10],
         2: [0.25, 0.7, 10],
         3: [0.5, 0.95, 10],
-        4: [0.25, 0.7, 10],
+        4: [0.15, 0.6, 10],
     }
+    # import ipdb
+    # ipdb.set_trace()
     name_to_class = {v: n for n, v in class_to_name.items()}
     if not isinstance(current_classes, (list, tuple)):
         current_classes = [current_classes]
     current_classes_int = []
+    current_classes_str = []
     for curcls in current_classes:
         if isinstance(curcls, str):
             current_classes_int.append(name_to_class[curcls])
+            current_classes_str.append(curcls)
         else:
+            current_classes_str.append(class_to_name[curcls])
             current_classes_int.append(curcls)
-    current_classes = current_classes_int
+    # current_classes = current_classes_int
     overlap_ranges = np.zeros([3, 3, len(current_classes)])
-    for i, curcls in enumerate(current_classes):
+    for i, curcls in enumerate(current_classes_int):
         overlap_ranges[:, :, i] = np.array(
             class_to_range[curcls])[:, np.newaxis]
     result = ''
@@ -716,7 +723,8 @@ def get_coco_eval_result(gt_annos, dt_annos, current_classes):
                 compute_aos = True
             break
     mAPbbox, mAPbev, mAP3d, mAPaos = do_coco_style_eval(
-        gt_annos, dt_annos, current_classes, overlap_ranges, compute_aos)
+        gt_annos, dt_annos, current_classes_str, overlap_ranges, compute_aos)
+    ret_dict = {}
     for j, curcls in enumerate(current_classes):
         # mAP threshold array: [num_minoverlap, metric, class]
         # mAP result: [num_class, num_diff, num_minoverlap]
@@ -737,4 +745,11 @@ def get_coco_eval_result(gt_annos, dt_annos, current_classes):
             result += print_str((f"aos  AP:{mAPaos[j, 0]:.2f}, "
                                  f"{mAPaos[j, 1]:.2f}, "
                                  f"{mAPaos[j, 2]:.2f}"))
-    return result
+    ret_dict['mAP_bev_easy'] = mAPbev[0, 0]
+    ret_dict['mAP_bev_mid'] = mAPbev[0, 1]
+    ret_dict['mAP_bev_hard'] = mAPbev[0, 2]
+    ret_dict['mAP_3d_easy'] = mAP3d[0, 0]
+    ret_dict['mAP_3d_mid'] = mAP3d[0, 1]
+    ret_dict['mAP_3d_hard'] = mAP3d[0, 2]
+
+    return result, ret_dict

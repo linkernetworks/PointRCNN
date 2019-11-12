@@ -14,16 +14,23 @@ class KittiRCNNDataset(KittiDataset):
                  logger=None, rcnn_training_roi_dir=None, rcnn_training_feature_dir=None, rcnn_eval_roi_dir=None,
                  rcnn_eval_feature_dir=None, gt_database_dir=None):
         super().__init__(root_dir=root_dir, split=split)
-        if classes == 'Car':
-            self.classes = ('Background', 'Car')
+        if classes == 'car':
+            self.classes = ('Background', 'car')
             aug_scene_root_dir = os.path.join(root_dir, 'KITTI', 'aug_scene')
+        elif classes == 'truck':
+            self.classes = ('Background', 'truck')
+            aug_scene_root_dir = os.path.join(root_dir, 'KITTI', 'aug_scene_vehicle_big')
+        elif classes == 'pole':
+            self.classes = ('Background', 'pole')
+            aug_scene_root_dir = os.path.join(
+                root_dir, 'KITTI', 'aug_scene_vehicle_big')
         elif classes == 'People':
             self.classes = ('Background', 'Pedestrian', 'Cyclist')
-        elif classes == 'Pedestrian':
-            self.classes = ('Background', 'Pedestrian')
+        elif classes == 'pedestrian':
+            self.classes = ('Background', 'pedestrian')
             aug_scene_root_dir = os.path.join(root_dir, 'KITTI', 'aug_scene_ped')
-        elif classes == 'Cyclist':
-            self.classes = ('Background', 'Cyclist')
+        elif classes == 'cyclist':
+            self.classes = ('Background', 'cyclist')
             aug_scene_root_dir = os.path.join(root_dir, 'KITTI', 'aug_scene_cyclist')
         else:
             assert False, "Invalid classes: %s" % classes
@@ -158,7 +165,7 @@ class KittiRCNNDataset(KittiDataset):
         type_whitelist = self.classes
         if self.mode == 'TRAIN' and cfg.INCLUDE_SIMILAR_TYPE:
             type_whitelist = list(self.classes)
-            if 'Car' in self.classes:
+            if 'car' in self.classes:
                 type_whitelist.append('Van')
             if 'Pedestrian' in self.classes:  # or 'Cyclist' in self.classes:
                 type_whitelist.append('Person_sitting')
@@ -168,6 +175,7 @@ class KittiRCNNDataset(KittiDataset):
             if obj.cls_type not in type_whitelist:  # rm Van, 20180928
                 continue
             if self.mode == 'TRAIN' and cfg.PC_REDUCE_BY_RANGE and (self.check_pc_range(obj.pos) is False):
+                # print('filtrate')
                 continue
             valid_obj_list.append(obj)
         return valid_obj_list
@@ -204,10 +212,10 @@ class KittiRCNNDataset(KittiDataset):
         :param img_shape:
         :return:
         """
-        val_flag_1 = np.logical_and(pts_img[:, 0] >= 0, pts_img[:, 0] < img_shape[1])
-        val_flag_2 = np.logical_and(pts_img[:, 1] >= 0, pts_img[:, 1] < img_shape[0])
-        val_flag_merge = np.logical_and(val_flag_1, val_flag_2)
-        pts_valid_flag = np.logical_and(val_flag_merge, pts_rect_depth >= 0)
+        # val_flag_1 = np.logical_and(pts_img[:, 0] >= 0, pts_img[:, 0] < img_shape[1])
+        # val_flag_2 = np.logical_and(pts_img[:, 1] >= 0, pts_img[:, 1] < img_shape[0])
+        # val_flag_merge = np.logical_and(val_flag_1, val_flag_2)
+        # pts_valid_flag = np.logical_and(val_flag_merge, pts_rect_depth >= 0)
 
         if cfg.PC_REDUCE_BY_RANGE:
             x_range, y_range, z_range = cfg.PC_AREA_SCOPE
@@ -215,8 +223,8 @@ class KittiRCNNDataset(KittiDataset):
             range_flag = (pts_x >= x_range[0]) & (pts_x <= x_range[1]) \
                          & (pts_y >= y_range[0]) & (pts_y <= y_range[1]) \
                          & (pts_z >= z_range[0]) & (pts_z <= z_range[1])
-            pts_valid_flag = pts_valid_flag & range_flag
-        return pts_valid_flag
+            # pts_valid_flag = pts_valid_flag & range_flag
+        return range_flag
 
     def __len__(self):
         if cfg.RPN.ENABLED:
@@ -264,8 +272,8 @@ class KittiRCNNDataset(KittiDataset):
             aug_pts = np.fromfile(pts_file, dtype=np.float32).reshape(-1, 4)
             pts_rect, pts_intensity = aug_pts[:, 0:3], aug_pts[:, 3]
 
-        pts_img, pts_rect_depth = calib.rect_to_img(pts_rect)
-        pts_valid_flag = self.get_valid_flag(pts_rect, pts_img, pts_rect_depth, img_shape)
+        # pts_img, pts_rect_depth = calib.rect_to_img(pts_rect)
+        pts_valid_flag = self.get_valid_flag(pts_rect, None, None, img_shape)
 
         pts_rect = pts_rect[pts_valid_flag][:, 0:3]
         pts_intensity = pts_intensity[pts_valid_flag]
@@ -283,6 +291,7 @@ class KittiRCNNDataset(KittiDataset):
 
         # generate inputs
         if self.mode == 'TRAIN' or self.random_select:
+            # self.logger.info('Num points, len: %d, req: %d' % (len(pts_rect), self.npoints))
             if self.npoints < len(pts_rect):
                 pts_depth = pts_rect[:, 2]
                 pts_near_flag = pts_depth < 40.0
@@ -296,7 +305,7 @@ class KittiRCNNDataset(KittiDataset):
             else:
                 choice = np.arange(0, len(pts_rect), dtype=np.int32)
                 if self.npoints > len(pts_rect):
-                    extra_choice = np.random.choice(choice, self.npoints - len(pts_rect), replace=False)
+                    extra_choice = np.random.choice(choice, self.npoints - len(pts_rect), replace=True)
                     choice = np.concatenate((choice, extra_choice), axis=0)
                 np.random.shuffle(choice)
 

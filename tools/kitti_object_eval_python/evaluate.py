@@ -15,7 +15,7 @@ def evaluate(label_path,
              result_path,
              label_split_file,
              current_class=0,
-             coco=False,
+             coco=True,
              score_thresh=-1):
     dt_annos = kitti.get_label_annos(result_path)
     if score_thresh > 0:

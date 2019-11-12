@@ -13,7 +13,8 @@ def rotate_pc_along_y_torch(pc, rot_angle):
 
     raw_1 = torch.cat([cosa, -sina], dim=1)
     raw_2 = torch.cat([sina, cosa], dim=1)
-    R = torch.cat((raw_1.unsqueeze(dim=1), raw_2.unsqueeze(dim=1)), dim=1)  # (N, 2, 2)
+    R = torch.cat((raw_1.unsqueeze(dim=1), raw_2.unsqueeze(dim=1)),
+                  dim=1)  # (N, 2, 2)
 
     pc_temp = pc[:, [0, 2]].unsqueeze(dim=1)  # (N, 1, 2)
 
@@ -57,8 +58,10 @@ def decode_bbox_target(roi_box3d, pred_reg, loc_scope, loc_bin_size, num_head_bi
         z_res_l, z_res_r = per_loc_bin_num * 3, per_loc_bin_num * 4
         start_offset = z_res_r
 
-        x_res_norm = torch.gather(pred_reg[:, x_res_l: x_res_r], dim=1, index=x_bin.unsqueeze(dim=1)).squeeze(dim=1)
-        z_res_norm = torch.gather(pred_reg[:, z_res_l: z_res_r], dim=1, index=z_bin.unsqueeze(dim=1)).squeeze(dim=1)
+        x_res_norm = torch.gather(
+            pred_reg[:, x_res_l: x_res_r], dim=1, index=x_bin.unsqueeze(dim=1)).squeeze(dim=1)
+        z_res_norm = torch.gather(
+            pred_reg[:, z_res_l: z_res_r], dim=1, index=z_bin.unsqueeze(dim=1)).squeeze(dim=1)
         x_res = x_res_norm * loc_bin_size
         z_res = z_res_norm * loc_bin_size
 
@@ -72,7 +75,8 @@ def decode_bbox_target(roi_box3d, pred_reg, loc_scope, loc_bin_size, num_head_bi
         start_offset = y_res_r
 
         y_bin = torch.argmax(pred_reg[:, y_bin_l: y_bin_r], dim=1)
-        y_res_norm = torch.gather(pred_reg[:, y_res_l: y_res_r], dim=1, index=y_bin.unsqueeze(dim=1)).squeeze(dim=1)
+        y_res_norm = torch.gather(
+            pred_reg[:, y_res_l: y_res_r], dim=1, index=y_bin.unsqueeze(dim=1)).squeeze(dim=1)
         y_res = y_res_norm * loc_y_bin_size
         pos_y = y_bin.float() * loc_y_bin_size + loc_y_bin_size / 2 - loc_y_scope + y_res
         pos_y = pos_y + roi_box3d[:, 1]
@@ -87,12 +91,14 @@ def decode_bbox_target(roi_box3d, pred_reg, loc_scope, loc_bin_size, num_head_bi
     ry_res_l, ry_res_r = ry_bin_r, ry_bin_r + num_head_bin
 
     ry_bin = torch.argmax(pred_reg[:, ry_bin_l: ry_bin_r], dim=1)
-    ry_res_norm = torch.gather(pred_reg[:, ry_res_l: ry_res_r], dim=1, index=ry_bin.unsqueeze(dim=1)).squeeze(dim=1)
+    ry_res_norm = torch.gather(
+        pred_reg[:, ry_res_l: ry_res_r], dim=1, index=ry_bin.unsqueeze(dim=1)).squeeze(dim=1)
     if get_ry_fine:
         # divide pi/2 into several bins
         angle_per_class = (np.pi / 2) / num_head_bin
         ry_res = ry_res_norm * (angle_per_class / 2)
-        ry = (ry_bin.float() * angle_per_class + angle_per_class / 2) + ry_res - np.pi / 4
+        ry = (ry_bin.float() * angle_per_class +
+              angle_per_class / 2) + ry_res - np.pi / 4
     else:
         angle_per_class = (2 * np.pi) / num_head_bin
         ry_res = ry_res_norm * (angle_per_class / 2)
@@ -110,7 +116,8 @@ def decode_bbox_target(roi_box3d, pred_reg, loc_scope, loc_bin_size, num_head_bi
 
     # shift to original coords
     roi_center = roi_box3d[:, 0:3]
-    shift_ret_box3d = torch.cat((pos_x.view(-1, 1), pos_y.view(-1, 1), pos_z.view(-1, 1), hwl, ry.view(-1, 1)), dim=1)
+    shift_ret_box3d = torch.cat(
+        (pos_x.view(-1, 1), pos_y.view(-1, 1), pos_z.view(-1, 1), hwl, ry.view(-1, 1)), dim=1)
     ret_box3d = shift_ret_box3d
     if roi_box3d.shape[1] == 7:
         roi_ry = roi_box3d[:, 6]

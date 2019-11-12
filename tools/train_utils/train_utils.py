@@ -28,7 +28,8 @@ class BNMomentumScheduler(object):
             setter=set_bn_momentum_default
     ):
         if not isinstance(model, nn.Module):
-            raise RuntimeError("Class '{}' is not a PyTorch nn Module".format(type(model).__name__))
+            raise RuntimeError(
+                "Class '{}' is not a PyTorch nn Module".format(type(model).__name__))
 
         self.model = model
         self.setter = setter
@@ -94,11 +95,13 @@ def load_checkpoint(model=None, optimizer=None, filename='checkpoint', logger=cu
 
 def load_part_ckpt(model, filename, logger=cur_logger, total_keys=-1):
     if os.path.isfile(filename):
-        logger.info("==> Loading part model from checkpoint '{}'".format(filename))
+        logger.info(
+            "==> Loading part model from checkpoint '{}'".format(filename))
         checkpoint = torch.load(filename)
         model_state = checkpoint['model_state']
 
-        update_model_state = {key: val for key, val in model_state.items() if key in model.state_dict()}
+        update_model_state = {
+            key: val for key, val in model_state.items() if key in model.state_dict()}
         state_dict = model.state_dict()
         state_dict.update(update_model_state)
         model.load_state_dict(state_dict)
@@ -160,7 +163,8 @@ class Trainer(object):
 
         cur_performance = 0
         if 'recalled_cnt' in eval_dict:
-            eval_dict['recall'] = eval_dict['recalled_cnt'] / max(eval_dict['gt_cnt'], 1)
+            eval_dict['recall'] = eval_dict['recalled_cnt'] / \
+                max(eval_dict['gt_cnt'], 1)
             cur_performance = eval_dict['recall']
         elif 'iou' in eval_dict:
             cur_performance = eval_dict['iou']
@@ -181,7 +185,8 @@ class Trainer(object):
 
                 if self.bnm_scheduler is not None:
                     self.bnm_scheduler.step(it)
-                    self.tb_log.add_scalar('bn_momentum', self.bnm_scheduler.lmbd(epoch), it)
+                    self.tb_log.add_scalar(
+                        'bn_momentum', self.bnm_scheduler.lmbd(epoch), it)
 
                 # train one epoch
                 for cur_it, batch in enumerate(train_loader):
@@ -195,7 +200,6 @@ class Trainer(object):
                             cur_lr = self.lr_warmup_scheduler.get_lr()[0]
                         else:
                             cur_lr = self.lr_scheduler.get_lr()[0]
-
                     loss, tb_dict, disp_dict = self._train_it(batch)
                     it += 1
 
@@ -216,7 +220,8 @@ class Trainer(object):
                 # save trained model
                 trained_epoch = epoch + 1
                 if trained_epoch % ckpt_save_interval == 0:
-                    ckpt_name = os.path.join(self.ckpt_dir, 'checkpoint_epoch_%d' % trained_epoch)
+                    ckpt_name = os.path.join(
+                        self.ckpt_dir, 'checkpoint_epoch_%d' % trained_epoch)
                     save_checkpoint(
                         checkpoint_state(self.model, self.optimizer, trained_epoch, it), filename=ckpt_name,
                     )
@@ -226,7 +231,8 @@ class Trainer(object):
                     pbar.close()
                     if test_loader is not None:
                         with torch.set_grad_enabled(False):
-                            val_loss, eval_dict, cur_performance = self.eval_epoch(test_loader)
+                            val_loss, eval_dict, cur_performance = self.eval_epoch(
+                                test_loader)
 
                         if self.tb_log is not None:
                             self.tb_log.add_scalar('val_loss', val_loss, it)
@@ -234,7 +240,8 @@ class Trainer(object):
                                 self.tb_log.add_scalar('val_' + key, val, it)
 
                 pbar.close()
-                pbar = tqdm.tqdm(total=len(train_loader), leave=False, desc='train')
+                pbar = tqdm.tqdm(total=len(train_loader),
+                                 leave=False, desc='train')
                 pbar.set_postfix(dict(total_it=it))
 
         return None

@@ -21,6 +21,7 @@ import glob
 import time
 from tensorboardX import SummaryWriter
 import tqdm
+import shutil
 
 
 np.random.seed(1024)  # set the same seed
@@ -54,8 +55,13 @@ parser.add_argument("--rcnn_eval_feature_dir", type=str, default=None,
 parser.add_argument('--set', dest='set_cfgs', default=None, nargs=argparse.REMAINDER,
                     help='set extra config keys if needed')
 args = parser.parse_args()
-
-
+name_to_class = {
+    'car':0,
+    'pedestrian':1,
+    'cyclist':2,
+    'truck':3,
+    'pole':4
+}
 def create_logger(log_file):
     log_format = '%(asctime)s  %(levelname)5s  %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format, filename=log_file)
@@ -80,6 +86,8 @@ def save_kitti_format(sample_id, calib, bbox3d, kitti_output_dir, scores, img_sh
     box_valid_mask = np.logical_and(img_boxes_w < img_shape[1] * 0.8, img_boxes_h < img_shape[0] * 0.8)
 
     kitti_output_file = os.path.join(kitti_output_dir, '%06d.txt' % sample_id)
+    def sigmoid(X):
+        return 1/(1+np.exp(-X))
     with open(kitti_output_file, 'w') as f:
         for k in range(bbox3d.shape[0]):
             if box_valid_mask[k] == 0:
@@ -91,7 +99,7 @@ def save_kitti_format(sample_id, calib, bbox3d, kitti_output_dir, scores, img_sh
             print('%s -1 -1 %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f' %
                   (cfg.CLASSES, alpha, img_boxes[k, 0], img_boxes[k, 1], img_boxes[k, 2], img_boxes[k, 3],
                    bbox3d[k, 3], bbox3d[k, 4], bbox3d[k, 5], bbox3d[k, 0], bbox3d[k, 1], bbox3d[k, 2],
-                   bbox3d[k, 6], scores[k]), file=f)
+                   bbox3d[k, 6], sigmoid(scores[k])), file=f)
 
 
 def save_rpn_features(seg_result, rpn_scores_raw, pts_features, backbone_xyz, backbone_features, kitti_features_dir,
@@ -444,8 +452,7 @@ def eval_one_epoch_rcnn(model, dataloader, epoch_id, result_dir, logger):
         ret_dict['rcnn_recall(thresh=%.2f)' % thresh] = cur_recall
 
     if cfg.TEST.SPLIT != 'test':
-        logger.info('Averate Precision:')
-        name_to_class = {'Car': 0, 'Pedestrian': 1, 'Cyclist': 2}
+        logger.info('Average Precision:')
         ap_result_str, ap_dict = kitti_evaluate(dataset.label_dir, final_output_dir, label_split_file=split_file,
                                                 current_class=name_to_class[cfg.CLASSES])
         logger.info(ap_result_str)
@@ -462,6 +469,8 @@ def eval_one_epoch_joint(model, dataloader, epoch_id, result_dir, logger):
     mode = 'TEST' if args.test else 'EVAL'
 
     final_output_dir = os.path.join(result_dir, 'final_result', 'data')
+    if os.path.exists(final_output_dir):
+        shutil.rmtree(final_output_dir)
     os.makedirs(final_output_dir, exist_ok=True)
 
     if args.save_result:
@@ -672,8 +681,9 @@ def eval_one_epoch_joint(model, dataloader, epoch_id, result_dir, logger):
         ret_dict['rcnn_recall(thresh=%.2f)' % thresh] = cur_recall
 
     if cfg.TEST.SPLIT != 'test':
-        logger.info('Averate Precision:')
-        name_to_class = {'Car': 0, 'Pedestrian': 1, 'Cyclist': 2}
+        logger.info('Average Precision:')
+        # print(name_to_class[cfg.CLASSES])
+        # import ipdb; ipdb.set_trace()
         ap_result_str, ap_dict = kitti_evaluate(dataset.label_dir, final_output_dir, label_split_file=split_file,
                                                 current_class=name_to_class[cfg.CLASSES])
         logger.info(ap_result_str)
@@ -812,7 +822,7 @@ def repeat_eval_ckpt(root_result_dir, ckpt_dir):
         pass
 
     # tensorboard log
-    tb_log = SummaryWriter(log_dir=os.path.join(root_result_dir, 'tensorboard_%s' % cfg.TEST.SPLIT))
+    tb_log = SummaryWriter(logdir=os.path.join(root_result_dir, 'tensorboard_%s' % cfg.TEST.SPLIT))
 
     while True:
         # check whether there is checkpoint which is not evaluated

@@ -10,9 +10,11 @@ class KittiDataset(torch_data.Dataset):
     def __init__(self, root_dir, split='train'):
         self.split = split
         is_test = self.split == 'test'
-        self.imageset_dir = os.path.join(root_dir, 'KITTI', 'object', 'testing' if is_test else 'training')
+        self.imageset_dir = os.path.join(
+            root_dir, 'KITTI', 'object', 'testing' if is_test else 'training')
 
-        split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', split + '.txt')
+        split_dir = os.path.join(
+            root_dir, 'KITTI', 'ImageSets', split + '.txt')
         self.image_idx_list = [x.strip() for x in open(split_dir).readlines()]
         self.num_sample = self.image_idx_list.__len__()
 
@@ -31,6 +33,7 @@ class KittiDataset(torch_data.Dataset):
         return cv2.imread(img_file)  # (H, W, 3) BGR mode
 
     def get_image_shape(self, idx):
+        return 1920, 1080, 3
         img_file = os.path.join(self.image_dir, '%06d.png' % idx)
         assert os.path.exists(img_file)
         im = Image.open(img_file)
@@ -44,6 +47,7 @@ class KittiDataset(torch_data.Dataset):
 
     def get_calib(self, idx):
         calib_file = os.path.join(self.calib_dir, '%06d.txt' % idx)
+#         print(calib_file)
         assert os.path.exists(calib_file)
         return calibration.Calibration(calib_file)
 
