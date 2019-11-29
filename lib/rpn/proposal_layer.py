@@ -78,23 +78,21 @@ class ProposalLayer(nn.Module):
         #     post_tot_top_n - int(post_tot_top_n * 0.7)
         # ]
 
-        nms_range_list = [-80.0, -40.0, 40.0, 80.0]
+        nms_range_list = [0, 30.0, 80.0]
         if cfg.CLASSES == 'pole':
             nms_range_list = [x / 2 for x in nms_range_list]
 
         pre_tot_top_n = cfg[self.mode].RPN_PRE_NMS_TOP_N
         pre_top_n_list = [
             0,
-            round(pre_tot_top_n * (1 - 0.7) / 2),
-            int(pre_tot_top_n * 0.7),
-            round(pre_tot_top_n * (1 - 0.7) / 2)
+            int(pre_tot_top_n * 0.7), pre_tot_top_n - int(pre_tot_top_n * 0.7)
         ]
+        # pre_top_n_list = [0,  round(pre_tot_top_n * (1-0.7)/2), int(pre_tot_top_n * 0.7),
+        #                   round(pre_tot_top_n * (1-0.7)/2)]
         post_tot_top_n = cfg[self.mode].RPN_POST_NMS_TOP_N
         post_top_n_list = [
-            0,
-            round(post_tot_top_n * (1 - 0.7) / 2),
-            int(post_tot_top_n * 0.7),
-            round(post_tot_top_n * (1 - 0.7) / 2)
+            0, int(post_tot_top_n * 0.7),
+            int(post_tot_top_n * (1 - 0.7))
         ]
 
         scores_single_list, proposals_single_list = [], []
