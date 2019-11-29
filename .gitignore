@@ -4,9 +4,10 @@
 *_ext*
 /output
 *.cu.o
-/data
+data
 **/build
 *.png
 **/*.egg-info
 **/dist
 tools/gt_database/
+.env
