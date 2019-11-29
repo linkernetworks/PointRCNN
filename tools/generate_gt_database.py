@@ -29,6 +29,16 @@ class GTDatabaseGenerator(KittiDataset):
             self.classes = ('Background', 'pedestrian')
         elif classes == 'car':
             self.classes = ('Background', 'car')
+        elif classes == 'cyclist':
+            self.classes = ('Background', 'cyclist')
+        elif classes == 'etc':
+            self.classes = ('Background', 'etc')
+        elif classes == 'drum':
+            self.classes = ('Background', 'drum')
+        elif classes == 'motorbiker':
+            self.classes = ('Background', 'motorbiker')
+        elif classes == 'vehicle_sp':
+            self.classes = ('Background', 'vehicle_sp')
         else:
             assert False, "Invalid classes: %s" % classes
 
@@ -79,16 +89,19 @@ class GTDatabaseGenerator(KittiDataset):
                 cur_pts = pts_rect[pt_mask_flag].astype(np.float32)
                 cur_pts_intensity = pts_intensity[pt_mask_flag].astype(
                     np.float32)
-                sample_dict = {'sample_id': sample_id,
-                               'cls_type': obj_list[k].cls_type,
-                               'gt_box3d': gt_boxes3d[k],
-                               'points': cur_pts,
-                               'intensity': cur_pts_intensity,
-                               'obj': obj_list[k]}
+                sample_dict = {
+                    'sample_id': sample_id,
+                    'cls_type': obj_list[k].cls_type,
+                    'gt_box3d': gt_boxes3d[k],
+                    'points': cur_pts,
+                    'intensity': cur_pts_intensity,
+                    'obj': obj_list[k]
+                }
                 gt_database.append(sample_dict)
 
         save_file_name = os.path.join(
-            args.save_dir, '%s_gt_database_3level_%s.pkl' % (args.split, self.classes[-1]))
+            args.save_dir,
+            '%s_gt_database_3level_%s.pkl' % (args.split, self.classes[-1]))
         with open(save_file_name, 'wb') as f:
             pickle.dump(gt_database, f)
 
