@@ -4,24 +4,24 @@
         "data_root": "/Users/baturalp/Downloads/select_200"
     },
     "vehicleSmall_model": {
-        "model_path": "ckpt/car_r0.pth",
-        "config_path": "tools/cfgs/default.yaml"
+        "model_path": "ckpt/prcnn_headlamp_car_r1.pth",
+        "config_path": "tools/cfgs/car_bdd.yml"
     },
     "pedestrian_model": {
-        "model_path": "ckpt/pedestrian_r0.pth",
-        "config_path": "tools/cfgs/default_pedestrian.yaml"
+        "model_path": "ckpt/prcnn_headlamp_ped_r1.pth",
+        "config_path": "tools/cfgs/pedestrian_headlamp.yaml"
     },
     "cyclist_model": {
         "model_path": "ckpt/cyclist_r0.pth",
         "config_path": "tools/cfgs/default_cyclist.yaml"
     },
     "pole_model": {
-        "model_path": "ckpt/pole_r0_v1.pth",
-        "config_path": "tools/cfgs/pole.yaml"
+        "model_path": "ckpt/prcnn_headlamp_pole_r1.pth",
+        "config_path": "tools/cfgs/pole_headlamp.yaml"
     },
     "vehicleBig_model": {
-        "model_path": "ckpt/truck_62.pth",
-        "config_path": "tools/cfgs/default_truck.yaml"
+        "model_path": "ckpt/prcnn_headlamp_truck_r1.pth",
+        "config_path": "tools/cfgs/truck_headlamp.yaml"
     },
     "output": {
         "directory": "infer_out",

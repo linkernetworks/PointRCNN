@@ -14,6 +14,7 @@ from data_reader import DataReader, cam_to_velo, velo_to_cam_axis
 from lib.config import cfg, cfg_from_file
 import torch
 from json_out import dump_json
+from lib.utils import kitti_utils
 
 CUBE_EDGES_BY_VERTEX = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7],
                         [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
@@ -159,6 +160,18 @@ def run(args):
                     del model
                     break
             out_list[pred_class] = result_out_list
+    for key in out_list.keys():
+        if key == 'vehicleSmall':
+            continue
+        for i, frame_cur in enumerate(out_list[key]):
+            frame_car = out_list['vehicleSmall'][i]
+            if not len(frame_car) or not len(frame_cur):
+                continue
+            corners_car = kitti_utils.boxes3d_to_corners3d(frame_car)
+            corners_cur = kitti_utils.boxes3d_to_corners3d(frame_cur)
+            iou3d = kitti_utils.get_iou3d(corners_car, corners_cur)
+            keep_inds = np.where(np.sum(iou3d, axis=0) == 0)[0]
+            out_list[key][i] = frame_cur[keep_inds]
     print('Inference Done')
     out_dir = args.output_json.split('/')[0] if len(
         args.output_json.split('/')) == 2 else None
