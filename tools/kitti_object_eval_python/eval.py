@@ -618,32 +618,36 @@ def get_official_eval_result(gt_annos, dt_annos, current_classes):
     min_overlaps = np.stack([overlap_0_7, overlap_0_5], axis=0)  # [2, 3, 5]
     class_to_name = {
         0: 'car',
-        1: 'Pedestrian',
-        2: 'pole',
-        3: 'Van',
-        4: 'Person_sitting',
+        1: 'pedestrian',
+        2: 'cyclist',
+        3: 'truck',
+        4: 'pole',
     }
     name_to_class = {v: n for n, v in class_to_name.items()}
     if not isinstance(current_classes, (list, tuple)):
         current_classes = [current_classes]
     current_classes_int = []
+    current_classes_str = []
     for curcls in current_classes:
         if isinstance(curcls, str):
             current_classes_int.append(name_to_class[curcls])
+            current_classes_str.append(curcls)
         else:
+            current_classes_str.append(class_to_name[curcls])
             current_classes_int.append(curcls)
-    current_classes = current_classes_int
-    min_overlaps = min_overlaps[:, :, current_classes]
+    # current_classes = current_classes_int
+
     result = ''
     # check whether alpha is valid
     compute_aos = False
+
     for anno in dt_annos:
         if anno['alpha'].shape[0] != 0:
             if anno['alpha'][0] != -10:
                 compute_aos = True
             break
     mAPbbox, mAPbev, mAP3d, mAPaos = do_eval(gt_annos, dt_annos,
-                                             current_classes, min_overlaps,
+                                             current_classes_str, min_overlaps,
                                              compute_aos)
 
     ret_dict = {}
@@ -690,7 +694,7 @@ def get_coco_eval_result(gt_annos, dt_annos, current_classes):
         4: 'pole',
     }
     class_to_range = {
-        0: [0.25, 0.7, 10],
+        0: [0.5, 0.95, 10],
         1: [0.25, 0.7, 10],
         2: [0.25, 0.7, 10],
         3: [0.5, 0.95, 10],
@@ -718,11 +722,11 @@ def get_coco_eval_result(gt_annos, dt_annos, current_classes):
     result = ''
     # check whether alpha is valid
     compute_aos = False
-    for anno in dt_annos:
-        if anno['alpha'].shape[0] != 0:
-            if anno['alpha'][0] != -10:
-                compute_aos = True
-            break
+    # for anno in dt_annos:
+    #     if anno['alpha'].shape[0] != 0:
+    #         if anno['alpha'][0] != -10:
+    #             compute_aos = True
+    #         break
     mAPbbox, mAPbev, mAP3d, mAPaos = do_coco_style_eval(
         gt_annos, dt_annos, current_classes_str, overlap_ranges, compute_aos)
     ret_dict = {}

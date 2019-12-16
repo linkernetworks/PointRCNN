@@ -139,7 +139,7 @@ import lib.utils.roipool3d.roipool3d_utils as roipool3d_utils
 from lib.config import cfg
 
 # %%
-root = './gt_database_r2'
+root = './gt_database'
 gt_filepath_list = [
     join(root, rel_path) for rel_path in os.listdir(root)
     if rel_path.endswith('.pkl')

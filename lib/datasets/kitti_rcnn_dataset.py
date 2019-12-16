@@ -122,7 +122,7 @@ class KittiRCNNDataset(KittiDataset):
                                                                  len(self.image_idx_list)))
 
     def get_label(self, idx):
-        if idx < 10000:
+        if idx < 100000:
             label_file = os.path.join(self.label_dir, '%06d.txt' % idx)
         else:
             label_file = os.path.join(self.aug_label_dir, '%06d.txt' % idx)
@@ -131,16 +131,16 @@ class KittiRCNNDataset(KittiDataset):
         return kitti_utils.get_objects_from_label(label_file)
 
     def get_image(self, idx):
-        return super().get_image(idx % 10000)
+        return super().get_image(idx % 100000)
 
     def get_image_shape(self, idx):
-        return super().get_image_shape(idx % 10000)
+        return super().get_image_shape(idx % 100000)
 
     def get_calib(self, idx):
-        return super().get_calib(idx % 10000)
+        return super().get_calib(idx % 100000)
 
     def get_road_plane(self, idx):
-        return super().get_road_plane(idx % 10000)
+        return super().get_road_plane(idx % 100000)
 
     @staticmethod
     def get_rpn_features(rpn_feature_dir, idx):
@@ -253,7 +253,7 @@ class KittiRCNNDataset(KittiDataset):
 
     def get_rpn_sample(self, index):
         sample_id = int(self.sample_id_list[index])
-        if sample_id < 10000:
+        if sample_id < 100000:
             calib = self.get_calib(sample_id)
             # img = self.get_image(sample_id)
             img_shape = self.get_image_shape(sample_id)
@@ -263,9 +263,9 @@ class KittiRCNNDataset(KittiDataset):
             pts_rect = calib.lidar_to_rect(pts_lidar[:, 0:3])
             pts_intensity = pts_lidar[:, 3]
         else:
-            calib = self.get_calib(sample_id % 10000)
+            calib = self.get_calib(sample_id % 100000)
             # img = self.get_image(sample_id % 10000)
-            img_shape = self.get_image_shape(sample_id % 10000)
+            img_shape = self.get_image_shape(sample_id % 100000)
 
             pts_file = os.path.join(self.aug_pts_dir, '%06d.bin' % sample_id)
             assert os.path.exists(pts_file), '%s' % pts_file

@@ -1,6 +1,8 @@
 import time
 import fire
-
+import os, sys
+sys.path.insert(
+    0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../'))
 import tools.kitti_object_eval_python.kitti_common as kitti
 from tools.kitti_object_eval_python.eval import get_official_eval_result, get_coco_eval_result
 

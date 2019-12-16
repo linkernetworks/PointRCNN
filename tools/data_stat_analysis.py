@@ -22,7 +22,7 @@ import os
 
 # %%
 cat_map = []
-root = '//home/linker/data_disk/kitti_transform_data/bdd_kitti_headlamp_qa_r2/train/label_2'
+root = '//home/linker/data_disk/kitti_transform_data/bdd_kitti_headlamp_r3/train/label_2'
 tmp = [x for x in os.listdir(root) if x.endswith('txt')]
 for i in tmp:
     filename = os.path.join(root, i)
@@ -34,9 +34,9 @@ for i in tmp:
         # cat_map.append([category, split_line[8], 'h'])
         # cat_map.append([category, split_line[9], 'w'])
         # cat_map.append([category, split_line[10], 'l'])
-        cat_map.append([category, split_line[11], 'x'])
+        # cat_map.append([category, split_line[11], 'x'])
         cat_map.append([category, split_line[12], 'y'])
-        cat_map.append([category, split_line[13], 'z'])
+        # cat_map.append([category, split_line[13], 'z'])
         # if category == 'car' and (float(split_line[11]) <-100 or float(split_line[13])<-100):
         #     print(filename)
 df = pd.DataFrame(cat_map, columns=['Category', 'Size', 'Dimension'])
